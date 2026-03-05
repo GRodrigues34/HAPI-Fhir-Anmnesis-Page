@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SisAPEC-Work | Prontuário FHIR</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container py-4">
+    <h2 class="text-center mb-4 text-primary">SisAPEC-Work: Interoperabilidade FHIR</h2>
+
+    <ul class="nav nav-pills justify-content-center mb-4 bg-white p-2 rounded shadow-sm" id="mainNav">
+        <li class="nav-item">
+            <button class="nav-link active" onclick="alternarModulo('cadastro')">1. Cadastro de Pacientes</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" onclick="alternarModulo('anamnese')">2. Módulo de Anamnese</button>
+        </li>
+    </ul>
+
+    <div id="modulo-cadastro">
+        <div class="card border-primary shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">Configuração e Novo Paciente</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">URL do Servidor HAPI-FHIR:</label>
+                    <input type="text" class="form-control" id="serverUrl" value="http://localhost:8080/fhir">
+                </div>
+                <form id="formCadastro">
+                    <input type="hidden" id="pacienteId">
+                    <div class="row g-3">
+                        <div class="col-md-6"><input type="text" id="inputNome" class="form-control" placeholder="Nome" required></div>
+                        <div class="col-md-6"><input type="text" id="inputSobrenome" class="form-control" placeholder="Sobrenome" required></div>
+                        <div class="col-12 text-end">
+                            <button type="submit" class="btn btn-success">Salvar Paciente</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5>Pacientes Cadastrados</h5>
+                <table class="table table-hover">
+                    <thead><tr><th>ID</th><th>Nome</th><th>Ações</th></tr></thead>
+                    <tbody id="tabelaPacientes"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modulo-anamnese" style="display:none;">
+        <div class="card border-info shadow-sm mb-4">
+            <div class="card-header bg-info text-white">Anamnese de Promoção da Saúde</div>
+            <div class="card-body">
+                <div class="input-group mb-4">
+                    <input type="text" id="idBuscaClinica" class="form-control" placeholder="ID do Paciente">
+                    <button class="btn btn-dark" onclick="vincularPacienteClinico()">Vincular Paciente</button>
+                </div>
+
+                <div id="interfaceClinica" style="display:none;">
+                    <div class="alert alert-info">Paciente: <strong id="nomePacienteClinico">---</strong></div>
+
+                    <div class="accordion" id="accAnamnese">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#sec1">1. Queixa Principal e Satisfação</button></h2>
+                            <div id="sec1" class="accordion-collapse collapse show" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formQueixa">
+                                        <input type="hidden" id="queixaId">
+                                        <textarea id="txtQueixa" class="form-control mb-2" placeholder="Qual sua queixa principal?" required></textarea>
+                                        <select id="selSatisfacao" class="form-select mb-2">
+                                            <option value="satisfied">Satisfeito</option>
+                                            <option value="neutral">Neutro</option>
+                                            <option value="dissatisfied">Insatisfeito</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-primary btn-sm">Salvar Registro</button>
+                                    </form>
+                                    <div id="listQueixas" class="mt-2 small"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#sec2">2. Internação</button></h2>
+                            <div id="sec2" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formInternacao">
+                                        <input type="hidden" id="internacaoId">
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><input type="date" id="dataInternacao" class="form-control"></div>
+                                            <div class="col-md-6"><input type="text" id="motivoInternacao" class="form-control" placeholder="Por quê?"></div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm mt-2">Registrar Internação</button>
+                                    </form>
+                                    <div id="listInternacoes" class="mt-2 small"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#sec3">3. Acompanhamento de Saúde</button></h2>
+                            <div id="sec3" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formAcompanhamento">
+                                        <input type="hidden" id="acompId">
+                                        <div class="mb-2">
+                                            <label class="small">Necessita acompanhamento?</label>
+                                            <select id="selAcomp" class="form-select"><option value="yes">Sim</option><option value="no">Não</option></select>
+                                        </div>
+                                        <input type="text" id="localAcomp" class="form-control mb-2" placeholder="Onde/Como?">
+                                        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+                                    </form>
+                                    <div id="listAcomp" class="mt-2 small"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#sec4">4. Última Visita</button></h2>
+                            <div id="sec4" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formVisita">
+                                        <input type="hidden" id="visitaId">
+                                        <input type="text" id="servicoProcurado" class="form-control mb-2" placeholder="Qual serviço foi procurado?">
+                                        <textarea id="motivoVisita" class="form-control mb-2" placeholder="Por que foi a esse serviço?"></textarea>
+                                        <button type="submit" class="btn btn-primary btn-sm">Registrar Visita</button>
+                                    </form>
+                                    <div id="listVisitas" class="mt-2 small"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sec5">
+                                    5. Intervenções Cirúrgicas
+                                </button>
+                            </h2>
+                            <div id="sec5" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formCirurgia">
+                                        <input type="hidden" id="cirurgiaId">
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-6">
+                                                <label class="small">Qual cirurgia?</label>
+                                                <input type="text" id="txtCirurgia" class="form-control" placeholder="Ex: Apendicectomia" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small">Motivo?</label>
+                                                <input type="text" id="motivoCirurgia" class="form-control" placeholder="Ex: Apendicite aguda">
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small">Houve complicações? Detalhe:</label>
+                                            <textarea id="txtComplicacao" class="form-control" rows="2" placeholder="Descreva se houve intercorrências"></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Salvar Cirurgia</button>
+                                    </form>
+                                    <div id="listCirurgias" class="mt-3 small text-muted"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <pre id="output" class="mt-3">Logs do console...</pre>
+</div>
+
+<!-- Prontuário Modal -->
+<div class="modal fade" id="modalProntuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProntuarioTitle">Prontuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div><strong>ID:</strong> <span id="modalPacId">-</span></div>
+                <div><strong>Nome:</strong> <span id="modalPacName">-</span></div>
+
+                <div class="row g-2 mt-3">
+                    <div class="col-12">
+                        <div id="modalLinks" class="list-group">
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-resource="Condition" data-params="">
+                                <div>
+                                    <strong>Queixa Principal</strong>
+                                    <div class="small text-muted">Condition</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">Abrir</span>
+                            </a>
+
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-resource="Encounter" data-params="&class=IMP">
+                                <div>
+                                    <strong>Internação</strong>
+                                    <div class="small text-muted">Encounter (class=IMP)</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">Abrir</span>
+                            </a>
+
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-resource="ServiceRequest" data-params="">
+                                <div>
+                                    <strong>Acompanhamento</strong>
+                                    <div class="small text-muted">ServiceRequest</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">Abrir</span>
+                            </a>
+
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-resource="Encounter" data-params="&class=AMB">
+                                <div>
+                                    <strong>Última Visita</strong>
+                                    <div class="small text-muted">Encounter (class=AMB)</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">Abrir</span>
+                            </a>
+
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-resource="Procedure" data-params="">
+                                <div>
+                                    <strong>Intervenções Cirúrgicas</strong>
+                                    <div class="small text-muted">Procedure</div>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">Abrir</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
