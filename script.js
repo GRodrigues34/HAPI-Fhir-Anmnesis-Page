@@ -486,9 +486,115 @@ async function atualizarHistoricoTotal(pacId) {
             </div>
         </div>`
     }).join('');
+
+    // --- BUSCAR TABAGISMO (LOINC 72166-2) ---
+    const tab = await fetchRes("Observation?code=72166-2&");
+    document.getElementById('listTabagismo').innerHTML = tab.map(e => `
+        <div class="d-flex justify-content-between align-items-center p-1 border-bottom small">
+            <div>${e.resource.valueString}</div>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="prepararEdicaoTabagismo('${e.resource.id}')">Editar</button>
+                <button class="btn btn-sm btn-outline-danger ms-1" onclick="excluirRecurso('Observation', '${e.resource.id}')">Excluir</button>
+            </div>
+        </div>`).join('');
+
+    // --- BUSCAR ETILISMO (LOINC 74205-6) ---
+    const eti = await fetchRes("Observation?code=74205-6&");
+    document.getElementById('listEtilismo').innerHTML = eti.map(e => `
+        <div class="d-flex justify-content-between align-items-center p-1 border-bottom small">
+            <div>${e.resource.valueString}</div>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="prepararEdicaoEtilismo('${e.resource.id}')">Editar</button>
+                <button class="btn btn-sm btn-outline-danger ms-1" onclick="excluirRecurso('Observation', '${e.resource.id}')">Excluir</button>
+            </div>
+        </div>`).join('');
 }
 
+// Função genérica para salvar Tabagismo e Etilismo
+async function salvarHabito(tipo, loincCode, loincDisplay, selId, txtId, recIdField, formId) {
+    const pacId = document.getElementById('idBuscaClinica').value;
+    const recId = document.getElementById(recIdField).value;
+    
+    const observation = {
+        resourceType: "Observation",
+        status: "final",
+        category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "social-history" }] }],
+        code: { coding: [{ system: "http://loinc.org", code: loincCode, display: loincDisplay }], text: tipo },
+        subject: { reference: `Patient/${pacId}` },
+        valueString: `Status: ${document.getElementById(selId).value}. Obs: ${document.getElementById(txtId).value}`
+    };
 
+    if (recId) observation.id = recId;
+
+    const res = await fetch(`${getBaseUrl()}/Observation${recId ? '/' + recId : ''}`, {
+        method: recId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/fhir+json' },
+        body: JSON.stringify(observation)
+    });
+
+    if (res.ok) {
+        alert(`${tipo} salvo com sucesso!`);
+        document.getElementById(formId).reset();
+        document.getElementById(recIdField).value = "";
+        atualizarHistoricoTotal(pacId);
+    }
+}
+
+// Listeners para os formulários
+document.getElementById('formTabagismo').addEventListener('submit', (e) => {
+    e.preventDefault();
+    salvarHabito('Tabagismo', '72166-2', 'Tobacco smoking status', 'selFumante', 'txtTabagismo', 'tabagismoId', 'formTabagismo');
+});
+
+document.getElementById('formEtilismo').addEventListener('submit', (e) => {
+    e.preventDefault();
+    salvarHabito('Etilismo', '74205-6', 'Alcohol use', 'selEtilismo', 'txtEtilismo', 'etilismoId', 'formEtilismo');
+});
+
+async function prepararEdicaoTabagismo(id) {
+    const res = await fetch(`${getBaseUrl()}/Observation/${id}`);
+    const r = await res.json();
+    const val = r.valueString || "";
+    
+    document.getElementById('tabagismoId').value = r.id;
+    // Extrai o que está depois de "Obs: " para o campo de texto
+    document.getElementById('txtTabagismo').value = val.split("Obs: ")[1] || "";
+    // Extrai o status para o Select
+    const statusMatch = val.match(/Status: (.*?)\./);
+    if (statusMatch) document.getElementById('selFumante').value = statusMatch[1];
+    
+    // Abre a aba do acordeão se estiver fechada
+    document.querySelector('#sec6 .accordion-button').click();
+}
+
+async function excluirRecurso(recurso, id) {
+    if (!confirm(`Confirma a exclusão deste registro de ${recurso}?`)) return;
+    
+    const res = await fetch(`${getBaseUrl()}/${recurso}/${id}`, {
+        method: 'DELETE'
+    });
+    
+    if (res.ok) {
+        alert("Registro excluído!");
+        const pacId = document.getElementById('idBuscaClinica').value;
+        atualizarHistoricoTotal(pacId);
+    } else {
+        alert("Erro ao excluir registro.");
+    }
+}
+
+async function prepararEdicaoEtilismo(id) {
+    const res = await fetch(`${getBaseUrl()}/Observation/${id}`);
+    const r = await res.json();
+    const val = r.valueString || "";
+    
+    document.getElementById('etilismoId').value = r.id;
+    document.getElementById('txtEtilismo').value = val.split("Obs: ")[1] || "";
+    const statusMatch = val.match(/Status: (.*?)\./);
+    if (statusMatch) document.getElementById('selEtilismo').value = statusMatch[1];
+    
+    document.querySelector('#sec7 .accordion-button').click();
+}
 
 document.getElementById('formCadastro').addEventListener('submit', salvarPaciente);
 listarPacientes();
