@@ -14,10 +14,10 @@
 
     <ul class="nav nav-pills justify-content-center mb-4 bg-white p-2 rounded shadow-sm" id="mainNav">
         <li class="nav-item">
-            <button class="nav-link active" onclick="alternarModulo('cadastro')">1. Cadastro de Pacientes</button>
+            <button id="btnNavCadastro" class="nav-link active">1. Cadastro de Pacientes</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link" onclick="alternarModulo('anamnese')">2. Módulo de Anamnese</button>
+            <button id="btnNavAnamnese" class="nav-link">2. Módulo de Anamnese</button>
         </li>
     </ul>
 
@@ -59,7 +59,7 @@
             <div class="card-body">
                 <div class="input-group mb-4">
                     <input type="text" id="idBuscaClinica" class="form-control" placeholder="ID do Paciente">
-                    <button class="btn btn-dark" onclick="vincularPacienteClinico()">Vincular Paciente</button>
+                    <button type="button" id="btnVincularPaciente" class="btn btn-dark">Vincular Paciente</button>
                 </div>
 
                 <div id="interfaceClinica" style="display:none;">
@@ -187,6 +187,83 @@
                             </div>
                         </div>
 
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#sec8">8. Uso de Medicamentos</button></h2>
+                            <div id="sec8" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formMedicacao">
+                                        <input type="hidden" id="medicacaoId">
+                                        <label class="small">Fez uso contínuo de algum medicamento?</label>
+                                        <div class="mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="usouMedicamento" id="usouMedicamentoSim" value="yes">
+                                                <label class="form-check-label" for="usouMedicamentoSim">Sim</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="usouMedicamento" id="usouMedicamentoNao" value="no" checked>
+                                                <label class="form-check-label" for="usouMedicamentoNao">Não</label>
+                                            </div>
+                                        </div>
+                                        <label class="small">Quais medicamentos?</label>
+                                        <div class="mb-2">
+                                            <div class="input-group">
+                                                <input type="text" id="inputMedicacao" class="form-control" placeholder="Digite o nome do medicamento...">
+                                                <button type="button" id="btnAddMedication" class="btn btn-outline-primary">Adicionar</button>
+                                            </div>
+                                            <div id="medicationChips" class="mt-2" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                                            <div id="medicationSuggestions" style="position:absolute; background:white; border:1px solid #ddd; width:350px; max-height:200px; overflow-y:auto; display:none; z-index:1000;"></div>
+                                        </div>
+                                        <textarea id="detalheMedicacao" class="form-control mb-2" placeholder="Qual é o nome da medicação, dose, indicação e quem a indicou?" maxlength="500"></textarea>
+                                        <small id="charCountMedicacao" class="text-muted">0/500</small>
+                                        <label class="small mt-3 d-block">Conseguia tomar os remédios conforme o médico receituou?</label>
+                                        <div class="mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="consegueTomar" id="consegueTomarSim" value="yes">
+                                                <label class="form-check-label" for="consegueTomarSim">Sim</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="consegueTomar" id="consegueTomarNao" value="no" checked>
+                                                <label class="form-check-label" for="consegueTomarNao">Não</label>
+                                            </div>
+                                        </div>
+                                        <textarea id="porqueMedicacao" class="form-control mb-2" placeholder="Por quê?" maxlength="500"></textarea>
+                                        <small id="charCountMotivo" class="text-muted">0/500</small>
+                                        <button type="submit" class="btn btn-primary btn-sm mt-3">Salvar Medicação</button>
+                                    </form>
+                                    <div id="listMedicacao" class="mt-3 small"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#sec9">9. Orientações de Saúde</button></h2>
+                            <div id="sec9" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <form id="formOrientacoes">
+                                        <input type="hidden" id="orientacoesId">
+                                        <label class="small">Além de remédios, o que mais médicos e enfermeiros orientaram?</label>
+                                        <textarea id="txtOrientacoes" class="form-control mb-2" placeholder="Descreva as orientações recebidas..." required maxlength="500"></textarea>
+                                        <small id="charCountOrientacoes" class="text-muted">0/500</small>
+                                        <label class="small mt-3 d-block">Consegue fazer tudo o que eles pediram?</label>
+                                        <div class="mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="consegueOrientacoes" id="consegueOrientacoesSim" value="yes">
+                                                <label class="form-check-label" for="consegueOrientacoesSim">Sim</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="consegueOrientacoes" id="consegueOrientacoesNao" value="no" checked>
+                                                <label class="form-check-label" for="consegueOrientacoesNao">Não</label>
+                                            </div>
+                                        </div>
+                                        <textarea id="porqueOrientacoes" class="form-control mb-2" placeholder="Por quê?" maxlength="500"></textarea>
+                                        <small id="charCountPorque" class="text-muted">0/500</small>
+                                        <button type="submit" class="btn btn-primary btn-sm mt-3">Salvar Orientações</button>
+                                    </form>
+                                    <div id="listOrientacoes" class="mt-3 small"></div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -212,6 +289,8 @@
                     <a href="#" class="list-group-item list-group-item-action" data-resource="Procedure">Cirurgias</a>
                     <a href="#" class="list-group-item list-group-item-action" data-resource="Observation" data-params="&code=72166-2">Tabagismo (LOINC)</a>
                     <a href="#" class="list-group-item list-group-item-action" data-resource="Observation" data-params="&code=74205-6">Etilismo (LOINC)</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-resource="MedicationStatement">Medicamentos</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-resource="Observation" data-params="&code=health-guidance">Orientações de Saúde</a>
                 </div>
             </div>
         </div>
@@ -219,6 +298,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="script.js"></script>
+<script type="module" src="src/ui/main.js"></script>
 </body>
 </html>
