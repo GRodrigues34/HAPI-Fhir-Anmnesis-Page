@@ -264,6 +264,45 @@
                             </div>
                         </div>
 
+                        <div class="accordion-item">
+                            <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#sec10">10. Dados do Smartwatch</button></h2>
+                            <div id="sec10" class="accordion-collapse collapse" data-bs-parent="#accAnamnese">
+                                <div class="accordion-body">
+                                    <div class="alert alert-secondary">
+                                        <strong>Dispositivo:</strong> Redmi Watch 5 Active (Xiaomi)
+                                        <br><small class="text-muted">IHE PCD-01 | IEEE 11073 | HL7 FHIR PoCD</small>
+                                    </div>
+                                    <div id="watchDataPreview" class="mb-3" style="display:none;">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="card border-danger">
+                                                    <div class="card-body text-center">
+                                                        <h6 class="text-danger">❤️ Frequência Cardíaca</h6>
+                                                        <h2 id="previewHR" class="text-danger">--</h2>
+                                                        <small class="text-muted">bpm (LOINC: 8889-8)</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card border-primary">
+                                                    <div class="card-body text-center">
+                                                        <h6 class="text-primary">🫁 SpO2</h6>
+                                                        <h2 id="previewSpO2" class="text-primary">--</h2>
+                                                        <small class="text-muted">% (LOINC: 59408-5)</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" id="btnSyncWatch" class="btn btn-success w-100">
+                                        🔄 Sincronizar Dados do Smartwatch
+                                    </button>
+                                    <div id="watchSyncStatus" class="mt-2 small"></div>
+                                    <div id="listWatchObs" class="mt-3 small"></div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -291,6 +330,7 @@
                     <a href="#" class="list-group-item list-group-item-action" data-resource="Observation" data-params="&code=74205-6">Etilismo (LOINC)</a>
                     <a href="#" class="list-group-item list-group-item-action" data-resource="MedicationStatement">Medicamentos</a>
                     <a href="#" class="list-group-item list-group-item-action" data-resource="Observation" data-params="&code=health-guidance">Orientações de Saúde</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-resource="Observation" data-params="&code=8889-8,59408-5">Dados do Smartwatch (PCD)</a>
                 </div>
             </div>
         </div>

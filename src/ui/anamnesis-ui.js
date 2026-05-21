@@ -3,6 +3,7 @@ import { AnamnesisService } from '../services/AnamnesisService.js';
 import { AnamnesisMapper } from '../mappers/AnamnesisMapper.js';
 import { EncounterMapper } from '../mappers/EncounterMapper.js';
 import { MedicationMapper } from '../mappers/MedicationMapper.js';
+import { WatchService } from '../services/WatchService.js';
 import { alteracaoModulo } from './main.js';
 
 let selectedMedications = [];
@@ -26,6 +27,9 @@ export function initAnamnesisUI() {
 
     // Delegation for edit/delete buttons in Anamnesis sections
     setupDelegatedActions();
+
+    // Smartwatch sync button
+    document.getElementById('btnSyncWatch')?.addEventListener('click', handleWatchSync);
 }
 
 async function vincularPaciente() {
@@ -305,6 +309,9 @@ async function atualizarHistoricoTotal(pacId) {
         const ori = await AnamnesisService.fetchHistoryList('Observation', pacId, '&code=health-guidance');
         document.getElementById('listOrientacoes').innerHTML = ori.map(e => renderListItemHtml(e, 'Orientações', 'ObservationORI')).join('');
 
+        // Histórico do smartwatch
+        await loadWatchHistory(pacId);
+
     } catch (err) {
         console.error("Erro ao atualizar historico", err);
     }
@@ -389,5 +396,83 @@ async function prepararEdicaoAnamnese(type, id) {
         }
     } catch (err) {
         alert('Erro ao carregar registro');
+    }
+}
+
+// ============================================================
+// Smartwatch — Sincronização e Histórico
+// ============================================================
+
+async function handleWatchSync() {
+    const patientId = document.getElementById('idBuscaClinica').value;
+    if (!patientId) {
+        alert('Vincule um paciente antes de sincronizar o smartwatch.');
+        return;
+    }
+
+    const btn = document.getElementById('btnSyncWatch');
+    const statusDiv = document.getElementById('watchSyncStatus');
+    const previewDiv = document.getElementById('watchDataPreview');
+
+    // Estado de carregamento
+    btn.disabled = true;
+    btn.textContent = '⏳ Sincronizando...';
+    statusDiv.innerHTML = '<span class="text-muted">Conectando ao smartwatch...</span>';
+
+    try {
+        const result = await WatchService.syncWatchData(patientId);
+
+        // Atualizar cards de preview
+        if (result.watchData.latest.hr) {
+            document.getElementById('previewHR').textContent = result.watchData.latest.hr.value;
+        }
+        if (result.watchData.latest.spo2) {
+            document.getElementById('previewSpO2').textContent = result.watchData.latest.spo2.value;
+        }
+        previewDiv.style.display = 'block';
+
+        // Status de sucesso
+        const syncType = result.isFirstSync ? 'Primeira sincronização (hierarquia PCD criada)' : 'Observações registradas';
+        statusDiv.innerHTML = `<span class="text-success">✅ ${syncType} — ${result.observationIds.length} observação(ões) salva(s)</span>`;
+
+        // Atualizar histórico
+        await loadWatchHistory(patientId);
+
+    } catch (error) {
+        statusDiv.innerHTML = `<span class="text-danger">❌ ${error.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Sincronizar Dados do Smartwatch';
+    }
+}
+
+async function loadWatchHistory(patientId) {
+    const listDiv = document.getElementById('listWatchObs');
+    if (!listDiv) return;
+
+    try {
+        const history = await WatchService.fetchWatchHistory(patientId);
+
+        if (history.length === 0) {
+            listDiv.innerHTML = '<span class="text-muted">Nenhum dado do smartwatch registrado.</span>';
+            return;
+        }
+
+        listDiv.innerHTML = history.map(obs => {
+            const icon = obs.type === 'hr' ? '❤️' : '🫁';
+            const label = obs.type === 'hr' ? 'FC' : 'SpO2';
+            const ts = formatTS(obs.timestamp);
+            return `
+                <div class="d-flex justify-content-between align-items-center p-1 border-bottom small">
+                    <div>
+                        <span>${icon} ${label}: <strong>${obs.value} ${obs.unit}</strong></span>
+                        <span class="text-muted ms-2">${ts}</span>
+                    </div>
+                    <span class="badge bg-secondary">${obs.loincCode}</span>
+                </div>`;
+        }).join('');
+    } catch (error) {
+        console.error('Erro ao carregar histórico do smartwatch:', error);
+        listDiv.innerHTML = '<span class="text-danger">Erro ao carregar histórico.</span>';
     }
 }
