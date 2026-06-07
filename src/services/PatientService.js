@@ -2,8 +2,48 @@
 import { FhirClient } from '../api/fhir-client.js';
 import { PatientMapper } from '../mappers/PatientMapper.js';
 import { AuditService } from './AuditService.js';
+import { CONFIG } from '../config.js';
 
 export class PatientService {
+    /**
+     * Connects to a patient on the FHIR server, or creates one if it doesn't exist.
+     * @returns {Promise<Object>} The Patient resource and its UI data
+     */
+    static async bootstrapPatient() {
+        try {
+            // 1. Try to fetch patient by ID
+            return await this.getPatientById(CONFIG.patientId);
+        } catch (error) {
+            // If the server itself is completely offline, it will fail to PUT as well and bubble up the error.
+            console.log(`Patient ${CONFIG.patientId} not found or error fetching: ${error.message}. Attempting to create...`);
+            
+            const formData = {
+                id: CONFIG.patientId,
+                nome: CONFIG.patientName.given,
+                sobrenome: CONFIG.patientName.family
+            };
+            
+            const fhirResource = PatientMapper.toFHIR(formData);
+            
+            // Add identifier
+            if (CONFIG.patientIdentifierSystem) {
+                fhirResource.identifier = [{
+                    system: CONFIG.patientIdentifierSystem,
+                    value: CONFIG.patientId
+                }];
+            }
+            
+            // Create via PUT to enforce the configured ID
+            const result = await FhirClient.put(`/Patient/${CONFIG.patientId}`, fhirResource);
+            await AuditService.logAuditEvent('C', 'Patient', CONFIG.patientId, CONFIG.patientId);
+            
+            return {
+                resource: result,
+                uiData: PatientMapper.toUI(result)
+            };
+        }
+    }
+
     /**
      * PDQm compliant patient search (ITI-78)
      * Matches patients by sorting by last modified, limited count.
